@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:project/Attendance/register_face_page.dart';
 import '../database/database_helper.dart';
 import '../models/employee_model.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'widgets/CustomTextField.dart';
-
+import 'Attendance/register_face_page.dart';
+import 'models/face_registration_result.dart';
 class AddEmployeePage extends StatefulWidget {
   final Employee? employee;
 
@@ -16,6 +18,9 @@ class AddEmployeePage extends StatefulWidget {
 
 class _AddEmployeePageState extends State<AddEmployeePage> {
   bool isEditMode = false;
+  bool isFaceRegistered = false;
+
+String? faceEmbedding;
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController empIdController = TextEditingController();
@@ -510,14 +515,115 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                 icon: const Icon(Icons.add_a_photo),
                 label: const Text("Add Photo"),
               ),
+const SizedBox(height: 20),
+Card(
+  elevation: 3,
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
 
+        const Text(
+          "Face Registration",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 15),
+
+        Row(
+          children: [
+
+            Icon(
+              isFaceRegistered
+                  ? Icons.check_circle
+                  : Icons.cancel,
+              color: isFaceRegistered
+                  ? Colors.green
+                  : Colors.red,
+            ),
+
+            const SizedBox(width: 10),
+
+            Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+
+    Text(
+      isFaceRegistered
+          ? "Face Registered"
+          : "Face Not Registered",
+    ),
+
+    const SizedBox(height: 5),
+
+    Text(
+      "Captured Images : ${isFaceRegistered ? 15 : 0}",
+    ),
+
+    Text(
+      isFaceRegistered
+          ? "Embedding : Ready"
+          : "Embedding : Not Generated",
+    ),
+
+  ],
+),
+
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+
+            icon: const Icon(Icons.face),
+
+            label: const Text("Register Face"),
+
+          onPressed: () async {
+
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const RegisterFacePage(),
+    ),
+  );
+
+  if (result != null) {
+
+    setState(() {
+
+      isFaceRegistered = result.success;
+
+      faceEmbedding = result.embedding;
+
+    });
+
+  }
+
+},
+          ),
+        ),
+
+      ],
+    ),
+  ),
+),
               const SizedBox(height: 25),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _saveEmployee,
-
+                      
+onPressed: isFaceRegistered
+    ? _saveEmployee
+    : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 15),

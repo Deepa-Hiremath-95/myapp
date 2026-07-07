@@ -108,147 +108,160 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
 
           return RefreshIndicator(
             onRefresh: _refreshEmployees,
-            child: SizedBox.expand(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10),
 
-                    child: TextField(
-                      controller: searchController,
+                      child: TextField(
+                        controller: searchController,
 
-                      decoration: const InputDecoration(
-                        hintText: "Search Employee",
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
+                        decoration: const InputDecoration(
+                          hintText: "Search Employee",
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
+
+                        onChanged: searchEmployee,
                       ),
-
-                      onChanged: searchEmployee,
                     ),
-                  ),
-
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
+              
+                    Expanded(
                       child: SingleChildScrollView(
-                        child: DataTable(
-                          headingRowColor: WidgetStateProperty.all(Colors.blue),
-                          headingTextStyle: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          dataRowMinHeight: 60,
-                          columnSpacing: 20,
-                          columns: const [
-                            DataColumn(label: Text('ID')),
-                            DataColumn(label: Text('EMP ID')),
-                            DataColumn(label: Text('NAME')),
-                            DataColumn(label: Text('DEPARTMENT')),
-                            DataColumn(label: Text('PHONE')),
-                            DataColumn(label: Text('Net SALARY')),
-                            DataColumn(label: Text('Delete')),
-                          ],
-                          rows: filteredEmployees.map((employee) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(employee.id.toString())),
-                                DataCell(
-                                  Text(
-                                    employee.empId,
-                                    style: const TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.bold,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                  onTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => EmployeeProfilePage(
-                                          employee: employee,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: constraints.maxWidth,
+                            ),
+                            child: DataTable(
+                              headingRowColor:
+                                  WidgetStateProperty.all(Colors.blue),
+                              headingTextStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              dataRowMinHeight: 60,
+                              columnSpacing: 20,
+                              columns: const [
+                                DataColumn(label: Text('ID')),
+                                DataColumn(label: Text('EMP ID')),
+                                DataColumn(label: Text('NAME')),
+                                DataColumn(label: Text('DEPARTMENT')),
+                                DataColumn(label: Text('PHONE')),
+                                DataColumn(label: Text('Net SALARY')),
+                                DataColumn(label: Text('Delete')),
+                              ],
+                              rows: filteredEmployees.map((employee) {
+                                return DataRow(
+                                  cells: [
+                                    DataCell(Text(employee.id.toString())),
+                                    DataCell(
+                                      Text(
+                                        employee.empId,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.bold,
+                                          decoration:
+                                              TextDecoration.underline,
                                         ),
                                       ),
-                                    );
-
-                                    _refreshEmployees();
-                                  },
-                                ),
-                                DataCell(Text(employee.name)),
-                                DataCell(Text(employee.department)),
-                                DataCell(Text(employee.phone)),
-                                DataCell(Text('₹${employee.netSalary}')),
-                                DataCell(
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () async {
-                                      bool? confirm = await showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: const Text(
-                                              "Delete Employee",
+                                      onTap: () async {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                EmployeeProfilePage(
+                                              employee: employee,
                                             ),
-                                            content: Text(
-                                              "Are you sure you want to permanently delete ${employee.name} ?",
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context, false);
-                                                },
-                                                child: const Text("Cancel"),
-                                              ),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.red,
-                                                ),
-
-                                                onPressed: () {
-                                                  Navigator.pop(context, true);
-                                                },
-
-                                                child: const Text("Delete"),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                      if (confirm == true) {
-                                        await DatabaseHelper.instance
-                                            .deleteEmployee(employee.id!);
-
+                                          ),
+                                        );
                                         _refreshEmployees();
-
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                "${employee.name} deleted successfully",
-                                              ),
-                                              backgroundColor: Colors.red,
-                                            ),
+                                      },
+                                    ),
+                                    DataCell(Text(employee.name)),
+                                    DataCell(Text(employee.department)),
+                                    DataCell(Text(employee.phone)),
+                                    DataCell(Text('₹${employee.netSalary}')),
+                                    DataCell(
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () async {
+                                          bool? confirm = await showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: const Text(
+                                                  "Delete Employee",
+                                                ),
+                                                content: Text(
+                                                  "Are you sure you want to permanently delete ${employee.name} ?",
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(
+                                                          context, false);
+                                                    },
+                                                    child:
+                                                        const Text("Cancel"),
+                                                  ),
+                                                  ElevatedButton(
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    ),
+                                                    onPressed: () {
+                                                      Navigator.pop(
+                                                          context, true);
+                                                    },
+                                                    child:
+                                                        const Text("Delete"),
+                                                  ),
+                                                ],
+                                              );
+                                            },
                                           );
-                                        }
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                                          if (confirm == true) {
+                                            await DatabaseHelper.instance
+                                                .deleteEmployee(
+                                                    employee.id!);
+                                            _refreshEmployees();
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    "${employee.name} deleted successfully",
+                                                  ),
+                                                  backgroundColor:
+                                                      Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
           );
         },

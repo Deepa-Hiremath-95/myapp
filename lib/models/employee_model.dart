@@ -38,9 +38,10 @@ class Employee {
 
   // Calculate Net Salary
   int get netSalary {
-    return int.parse(basicSalary) +
-        int.parse(allowances) -
-        int.parse(deductions);
+    final basic = int.tryParse(basicSalary) ?? 0;
+    final allowancesValue = int.tryParse(allowances) ?? 0;
+    final deductionsValue = int.tryParse(deductions) ?? 0;
+    return basic + allowancesValue - deductionsValue;
   }
 
   // Convert Employee object to Map

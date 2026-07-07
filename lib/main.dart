@@ -5,8 +5,9 @@ import 'package:project/slash_page.dart';
 // import 'package:sqflite/sqflite.dart';
 // import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 void main() {
-  // sqfliteFfiInit();
+  WidgetsFlutterBinding.ensureInitialized();
 
+  // sqfliteFfiInit();
   // databaseFactory = databaseFactoryFfi;
   runApp(const ProjectApp());
 }

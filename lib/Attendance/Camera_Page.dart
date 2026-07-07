@@ -1,21 +1,18 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:project/Attendance/AI/services/tflite_service.dart';
 import 'package:project/Attendance/services/face_recognition_Validation_service.dart';
-
 import 'painters/face_painter.dart';
 import 'services/input_image_converter.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:project/Attendance/services/Camera_service.dart';
-
 import 'services/face_detector_service.dart';
 import 'services/capture_service.dart';
 import 'dart:io';
+import 'services/face_pose_service.dart';
 // import 'package:camera/camera.dart';
 import 'services/recognition_service.dart';
-
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
 
@@ -26,10 +23,10 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> {
   final CameraService _cameraService = CameraService();
   CameraDescription? selectedCamera;
-  final FaceDetectorService _faceDetectorService = FaceDetectorService();
+  
   late List<CameraDescription> cameras;
   bool faceDetected = false;
-
+final FaceDetectorService _faceDetectorService = FaceDetectorService();
   Color borderColor = Colors.white;
 
   double borderWidth = 3;
@@ -58,19 +55,31 @@ class _CameraPageState extends State<CameraPage> {
 
   //recognizationface initialization
   final RecognitionService _recognitionService = RecognitionService();
+  String? cameraError;
 
   @override
-  Future<void> initState() async {
-    await TfliteService.instance.loadModel();
-
+  void initState() {
     super.initState();
-    initializeCamera();
+    initializeCamera().catchError((error, stackTrace) {
+      cameraError = error.toString();
+      print('Camera initialization error: $error');
+      if (mounted) {
+        setState(() {
+          statusText = 'Camera initialization failed';
+        });
+      }
+    });
   }
-  //caputure face related Future<void> captureFace() async {
 
+  //capture face related
   Future<void> captureFace() async {
     if (isCapturing) return;
     if (capturedImage != null) return;
+
+    if (_cameraService.controller == null) {
+      print('Cannot capture photo: camera controller is null');
+      return;
+    }
 
     isCapturing = true;
 
@@ -118,93 +127,82 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   Future<void> initializeCamera() async {
-    cameras = await availableCameras();
+    try {
+      await _cameraService.initialize();
+      await TfliteService.instance.loadModel();
+      selectedCamera = _cameraService.controller!.description;
 
-    final frontCamera = cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.front,
-    );
+      await _cameraService.startImageStream((CameraImage image) async {
+        if (cameraError != null) return;
 
-    _cameraService.controller = CameraController(
-      frontCamera,
-      ResolutionPreset.medium,
-      enableAudio: false,
-    );
+        print("Image Format: ${image.format.raw}");
+        print("Planes: ${image.planes.length}");
 
-    await _cameraService.controller!.initialize();
-    await TfliteService.instance.loadModel();
-    selectedCamera = _cameraService.controller!.description;
+        if (_isDetecting) return;
 
-    await _cameraService.startImageStream((CameraImage image) async {
-      print("Image Format: ${image.format.raw}");
-      print("Planes: ${image.planes.length}");
+        _isDetecting = true;
 
-      if (_isDetecting) return;
+        try {
+          final inputImage = InputImageConverter.convert(image, selectedCamera!);
 
-      _isDetecting = true;
+          if (inputImage != null) {
+            faces = await _faceDetectorService.detectFaces(inputImage);
+ if (faces.isNotEmpty) {
 
-      try {
-        final inputImage = InputImageConverter.convert(image, selectedCamera!);
+    final face = faces.first;
 
-        if (inputImage != null) {
-          faces = await _faceDetectorService.detectFaces(inputImage);
+    print("Yaw : ${face.headEulerAngleY}");
+    print("Pitch : ${face.headEulerAngleX}");
+    print("Smile : ${face.smilingProbability}");
 
-          faceCount = faces.length;
-          if (faceCount > 0) {
-            borderColor = Colors.green;
+  }
+            faceCount = faces.length;
+            if (faceCount > 0) {
+              borderColor = Colors.green;
+              borderWidth = 5;
 
-            borderWidth = 5;
-
-            if (faces.isNotEmpty) {
               final faceRect = faces.first.boundingBox;
 
               if (FaceValidationService.isFaceInsideGuideBox(
                 faceRect: faceRect,
-
                 guideRect: guideRect,
               )) {
                 statusText = "Hold Still...";
-
                 startHoldTimer();
-
                 borderColor = Colors.green;
-
                 faceDetected = true;
               } else {
                 stopHoldTimer();
-
                 statusText = "Center your face";
-
                 borderColor = Colors.white;
-
                 faceDetected = false;
               }
+
+              statusText = "Hold Still...";
+              startHoldTimer();
+            } else {
+              borderColor = Colors.white;
+              borderWidth = 3;
+              faceDetected = false;
+              statusText = "Looking for Face...";
             }
 
-            statusText = "Hold Still...";
+            print("Faces Detected : $faceCount");
 
-            startHoldTimer();
-          } else {
-            borderColor = Colors.white;
-
-            borderWidth = 3;
-
-            faceDetected = false;
-
-            statusText = "Looking for Face...";
+            if (mounted) {
+              setState(() {});
+            }
           }
-
-          print("Faces Detected : $faceCount");
-
-          if (mounted) {
-            setState(() {});
-          }
+        } catch (e) {
+          print(e);
         }
-      } catch (e) {
-        print(e);
-      }
 
-      _isDetecting = false;
-    });
+        _isDetecting = false;
+      });
+    } catch (error) {
+      cameraError = error.toString();
+      print('Camera initialization exception: $error');
+    }
 
     if (mounted) {
       setState(() {});
@@ -256,6 +254,26 @@ class _CameraPageState extends State<CameraPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (cameraError != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Face Attendance"),
+          centerTitle: true,
+          backgroundColor: Colors.blue,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Camera failed to initialize:\n$cameraError',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, color: Colors.red),
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_cameraService.controller == null ||
         !_cameraService.controller!.value.isInitialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

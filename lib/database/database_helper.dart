@@ -1,4 +1,6 @@
 import 'package:path/path.dart';
+import 'package:project/models/attendance_model.dart';
+import 'package:project/models/employee_face_model.dart';
 import 'package:sqflite/sqflite.dart';
 // import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -60,34 +62,126 @@ class DatabaseHelper {
         ''');
 
         //employee_faces
-        // ---------------
-        // id
-        // employeeId
-        // embedding
-        // await db.execute('''
-        //         CREATE TABLE IF NOT EXISTS employee_faces (
-        //           id INTEGER PRIMARY KEY AUTOINCREMENT,
-        //          employeeId TEXT NOT NULL UNIQUE,
-        //           embedding TEXT NOT NULL
-        //         )
-        //       ''');
-        /////////////////////
-        // attendance
-        // ---------------
-        // id
-        // employeeId
-        // date
-        // checkIn
-        // checkOut
-        // status
-        // await db.execute('''
-        //         CREATE TABLE IF NOT EXISTS ATTENDANCE(
-        //           TRSC_NO INTEGER PRIMARY KEY AUTOINCREMENT,
-        //           TRSCDATE DATE ,INTIME TIME , OUTTIME TIME,STATUS TEXT NOT NULL,
-        //confidence
-        //         )
-        //       ''');
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS employee_faces(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employeeId INTEGER UNIQUE,
+            embedding TEXT,
+            totalImages INTEGER,
+            createdAt TEXT
+          )
+        ''');
+              Future<int> insertEmployeeFace(EmployeeFace face) async {
+  final db = await database;
 
+  return await db.insert(
+    'employee_faces',
+    face.toMap(),
+  );
+}
+Future<EmployeeFace?> getEmployeeFace(int employeeId) async {
+  final db = await database;
+
+  final result = await db.query(
+    'employee_faces',
+    where: 'employeeId = ?',
+    whereArgs: [employeeId],
+  );
+
+  if (result.isNotEmpty) {
+    return EmployeeFace.fromMap(result.first);
+  }
+
+  return null;
+}
+Future<int> updateEmployeeFace(EmployeeFace face) async {
+  final db = await database;
+
+  return await db.update(
+    'employee_faces',
+    face.toMap(),
+    where: 'employeeId = ?',
+    whereArgs: [face.employeeId],
+  );
+}
+Future<int> deleteEmployeeFace(int employeeId) async {
+  final db = await database;
+
+  return await db.delete(
+    'employee_faces',
+    where: 'employeeId = ?',
+    whereArgs: [employeeId],
+  );
+}
+Future<bool> isFaceRegistered(
+    int employeeId) async {
+
+  final db = await database;
+
+  final result = await db.query(
+    "employee_faces",
+    where: "employeeId=?",
+    whereArgs: [employeeId],
+  );
+
+  return result.isNotEmpty;
+}
+
+//attendance table
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS attendance(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employeeId INTEGER NOT NULL,
+            attendanceDate TEXT NOT NULL,
+            checkInTime TEXT,
+            checkOutTime TEXT,
+            status TEXT,
+            confidence REAL,
+            createdAt TEXT
+          )
+        ''');
+
+Future<int> insertAttendance(AttendanceModel attendance) async {
+  final db = await database;
+  return await db.insert(
+    'attendance',
+    attendance.toMap(),
+  );
+  
+}
+Future<AttendanceModel?> getTodayAttendance(
+  int employeeId,
+  String date,
+) async {
+  final db = await database;
+
+  final result = await db.query(
+    'attendance',
+    where: 'employeeId = ? AND attendanceDate = ?',
+    whereArgs: [employeeId, date],
+  );
+
+  if (result.isNotEmpty) {
+    return AttendanceModel.fromMap(result.first);
+  }
+
+  return null;
+}
+Future<int> updateCheckout(
+  int attendanceId,
+  String checkoutTime,
+) async {
+  final db = await database;
+
+  return await db.update(
+    'attendance',
+    {
+      'checkOutTime': checkoutTime,
+    },
+    where: 'id = ?',
+    whereArgs: [attendanceId],
+  );
+}
         // Ensure default admin user exists
         final existing = await db.query(
           'user_master',
@@ -129,6 +223,29 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS employee_faces(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employeeId INTEGER UNIQUE,
+        embedding TEXT,
+        totalImages INTEGER,
+        createdAt TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS attendance(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employeeId INTEGER NOT NULL,
+        attendanceDate TEXT NOT NULL,
+        checkInTime TEXT,
+        checkOutTime TEXT,
+        status TEXT,
+        confidence REAL,
+        createdAt TEXT
       )
     ''');
 
