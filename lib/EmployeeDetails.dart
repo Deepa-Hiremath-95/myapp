@@ -130,32 +130,26 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
               
                     Expanded(
                       child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minWidth: constraints.maxWidth,
-                            ),
-                            child: DataTable(
-                              headingRowColor:
-                                  WidgetStateProperty.all(Colors.blue),
-                              headingTextStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                              dataRowMinHeight: 60,
-                              columnSpacing: 20,
-                              columns: const [
-                                DataColumn(label: Text('ID')),
-                                DataColumn(label: Text('EMP ID')),
-                                DataColumn(label: Text('NAME')),
-                                DataColumn(label: Text('DEPARTMENT')),
-                                DataColumn(label: Text('PHONE')),
-                                DataColumn(label: Text('Net SALARY')),
-                                DataColumn(label: Text('Delete')),
-                              ],
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          headingRowColor:
+                              WidgetStateProperty.all(Colors.blue),
+                          headingTextStyle: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          dataRowMinHeight: 48,
+                          columnSpacing: 15,
+                          columns: const [
+                            DataColumn(label: Text('ID')),
+                            DataColumn(label: Text('EMP ID')),
+                            DataColumn(label: Text('NAME')),
+                            DataColumn(label: Text('DEPARTMENT')),
+                            DataColumn(label: Text('PHONE')),
+                            DataColumn(label: Text('Net SALARY')),
+                            DataColumn(label: Text('Delete')),
+                          ],
                               rows: filteredEmployees.map((employee) {
                                 return DataRow(
                                   cells: [
@@ -254,11 +248,9 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                                   ],
                                 );
                               }).toList(),
-                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 );
               },
